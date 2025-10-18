@@ -45,12 +45,17 @@
   #define CLOSESOCK(s) close(s)
   static void net_init(void){ }
   static void net_fini(void){ }
-  static void msleep(unsigned ms){
-    struct timespec ts;
-    ts.tv_sec = ms / 1000;
-    ts.tv_nsec = (long)(ms % 1000) * 1000000L;
-    nanosleep(&ts, NULL);
-  }
+#endif
+
+#ifdef __human68k__
+#define CLOCK_MONOTONIC (0)
+#define SO_REUSEADDR (0)
+void clock_gettime(/*clockid_t clockid*/int clockid, struct timespec *tp){}
+const char* gai_strerror(int errcode) {
+  static char str[1024];
+  sprintf(str, "errcode=%d", errcode);
+  return str;
+}
 #endif
 
 /* High-resolution wall clock seconds */
@@ -76,8 +81,12 @@ static void human_rate(double bytes_per_sec, char* out, size_t outsz){
 }
 
 static int set_reuseaddr(sock_t s){
+#ifdef __human68k__
+  return 0;
+#else
   int yes = 1;
   return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
+#endif
 }
 
 static int run_server(const char* port_str){
@@ -104,7 +113,6 @@ static int run_server(const char* port_str){
     perror("socket"); freeaddrinfo(ai); net_fini(); return 1;
   }
   set_reuseaddr(ls);
-
   if(bind(ls, ai->ai_addr, (int)ai->ai_addrlen) < 0){
     perror("bind"); CLOSESOCK(ls); freeaddrinfo(ai); net_fini(); return 1;
   }
