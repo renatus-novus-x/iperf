@@ -67,9 +67,6 @@ static inline uint32_t trap_ontime_cs(void){
   );
   return cs;
 }
-static inline clock_t platform_clock(void){ return (clock_t)trap_ontime_cs(); }
-#else
-static inline clock_t platform_clock(void){ return (clock_t)clock(); }
 #endif
 
 /* High-resolution wall clock seconds */
@@ -81,8 +78,16 @@ static double now_secs(void){
   QueryPerformanceCounter(&t);
   return (double)t.QuadPart / (double)freq.QuadPart;
 #else
-  return (double)platform_clock() / (double)CLOCKS_PER_SEC;
+
+#ifdef __human68k__
+  return (double)trap_ontime_cs() / (double)CLOCKS_PER_SEC;
+#else
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
 #endif
+
+#endif /* _WIN32 */
 }
 
 static void human_rate(double bytes_per_sec, char* out, size_t outsz){
