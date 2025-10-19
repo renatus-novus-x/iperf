@@ -25,6 +25,7 @@
 #include <time.h>
 
 #ifdef _WIN32
+  #define _WINSOCK_DEPRECATED_NO_WARNINGS
   #include <winsock2.h>
   #include <ws2tcpip.h>
   #pragma comment(lib, "ws2_32.lib")
@@ -90,57 +91,96 @@ static int set_reuseaddr(sock_t s){
 }
 
 static int run_server(const char* port_str){
+  /* parse port */
+  char* endp = NULL;
+  unsigned long p = strtoul(port_str, &endp, 10);
+  if(!port_str || *port_str == '\0' || (endp && *endp != '\0') || p == 0 || p > 65535){
+    fprintf(stderr, "bad port: %s\n", port_str ? port_str : "(null)");
+    return 1;
+  }
+  unsigned short port = (unsigned short)p;
+
   net_init();
 
-  /* Resolve and bind (IPv4 only for simplicity) */
-  struct addrinfo hints; memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-
-  struct addrinfo* ai = NULL;
-  int rc = getaddrinfo(NULL, port_str, &hints, &ai);
-  if(rc != 0 || !ai){ fprintf(stderr, "getaddrinfo: %s\n",
+  /* listen socket (IPv4 only) */
+  sock_t ls = socket(AF_INET, SOCK_STREAM, 0);
+  if(ls == (sock_t)-1
 #ifdef _WIN32
-    gai_strerrorA(rc)
-#else
-    gai_strerror(rc)
+     || ls == INVALID_SOCKET
 #endif
-  ); net_fini(); return 1; }
+  ){
+    perror("socket");
+    net_fini();
+    return 1;
+  }
 
-  sock_t ls = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-  if(ls == (sock_t)-1 || ls == 0xFFFFFFFF){
-    perror("socket"); freeaddrinfo(ai); net_fini(); return 1;
+  /* reuseaddr */
+  int yes = 1;
+  setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
+
+  /* bind to 0.0.0.0:port */
+  struct sockaddr_in sa; memset(&sa, 0, sizeof(sa));
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = htonl(INADDR_ANY);
+  sa.sin_port = htons(port);
+
+  if(bind(ls, (struct sockaddr*)&sa, sizeof(sa)) < 0){
+    perror("bind");
+    CLOSESOCK(ls);
+    net_fini();
+    return 1;
   }
-  set_reuseaddr(ls);
-  if(bind(ls, ai->ai_addr, (int)ai->ai_addrlen) < 0){
-    perror("bind"); CLOSESOCK(ls); freeaddrinfo(ai); net_fini(); return 1;
-  }
-  freeaddrinfo(ai);
 
   if(listen(ls, 1) < 0){
-    perror("listen"); CLOSESOCK(ls); net_fini(); return 1;
+    perror("listen");
+    CLOSESOCK(ls);
+    net_fini();
+    return 1;
   }
 
-  printf("[server] listening on port %s ...\n", port_str);
+  printf("[server] listening on port %u ...\n", (unsigned)port);
 
-  struct sockaddr_storage ss; socklen_t slen = sizeof(ss);
-  sock_t s = accept(ls, (struct sockaddr*)&ss, &slen);
-  if(s == (sock_t)-1 || s == 0xFFFFFFFF){
-    perror("accept"); CLOSESOCK(ls); net_fini(); return 1;
+  /* accept one client */
+  struct sockaddr_in cli; socklen_t clen = sizeof(cli);
+  sock_t s = accept(ls, (struct sockaddr*)&cli, &clen);
+  if(s == (sock_t)-1
+#ifdef _WIN32
+     || s == INVALID_SOCKET
+#endif
+  ){
+    perror("accept");
+    CLOSESOCK(ls);
+    net_fini();
+    return 1;
   }
   CLOSESOCK(ls);
 
-  char addrbuf[64] = {0};
-  if(ss.ss_family == AF_INET){
-    struct sockaddr_in* si = (struct sockaddr_in*)&ss;
-    inet_ntop(AF_INET, &si->sin_addr, addrbuf, sizeof(addrbuf));
-    printf("[server] client: %s:%u\n", addrbuf, ntohs(si->sin_port));
+  char rem[64] = {0};
+  inet_ntop(AF_INET, &cli.sin_addr, rem, sizeof(rem));
+  unsigned rport = ntohs(cli.sin_port);
+
+  /* query the local address actually chosen for this connection */
+  struct sockaddr_in loc; socklen_t llen = sizeof(loc);
+  char locip[64] = {0};
+  unsigned lport = 0;
+  if(getsockname(s, (struct sockaddr*)&loc, &llen) == 0) {
+    inet_ntop(AF_INET, &loc.sin_addr, locip, sizeof(locip));
+    lport = ntohs(loc.sin_port);
+    printf("[server] local=%s:%u  remote=%s:%u\n", locip, lport, rem, rport);
+  } else {
+    /* fallback: at least show remote */
+    printf("[server] remote=%s:%u\n", rem, rport);
   }
 
+  /* receive & discard */
   const size_t BUFSZ = 64 * 1024;
   char* buf = (char*)malloc(BUFSZ);
-  if(!buf){ fprintf(stderr, "oom\n"); CLOSESOCK(s); net_fini(); return 1; }
+  if(!buf){
+    fprintf(stderr, "oom\n");
+    CLOSESOCK(s);
+    net_fini();
+    return 1;
+  }
 
   size_t total = 0, interval = 0;
   double t0 = now_secs(), last = t0;
@@ -191,47 +231,78 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
   if(seconds <= 0) seconds = 10;
   if(buf_kb <= 0) buf_kb = 16;
 
+  /* parse port */
+  char* endp = NULL;
+  unsigned long p = strtoul(port_str, &endp, 10);
+  if(!port_str || *port_str == '\0' || (endp && *endp != '\0') || p == 0 || p > 65535){
+    fprintf(stderr, "bad port: %s\n", port_str ? port_str : "(null)");
+    return 1;
+  }
+  unsigned short port = (unsigned short)p;
+
   net_init();
 
-  /* Resolve */
-  struct addrinfo hints; memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;            /* keep it simple: IPv4 */
-  hints.ai_socktype = SOCK_STREAM;
-
-  struct addrinfo* ai = NULL;
-  int rc = getaddrinfo(host, port_str, &hints, &ai);
-  if(rc != 0 || !ai){ fprintf(stderr, "getaddrinfo: %s\n",
+  /* create socket (IPv4 TCP) */
+  sock_t s = socket(AF_INET, SOCK_STREAM, 0);
+  if(s == (sock_t)-1
 #ifdef _WIN32
-    gai_strerrorA(rc)
-#else
-    gai_strerror(rc)
+     || s == INVALID_SOCKET
 #endif
-  ); net_fini(); return 1; }
-
-  sock_t s = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-  if(s == (sock_t)-1 || s == 0xFFFFFFFF){
-    perror("socket"); freeaddrinfo(ai); net_fini(); return 1;
+  ){
+    perror("socket");
+    net_fini();
+    return 1;
   }
 
-  printf("[client] connect %s:%s ...\n", host, port_str);
-  if(connect(s, ai->ai_addr, (int)ai->ai_addrlen) < 0){
-    perror("connect"); CLOSESOCK(s); freeaddrinfo(ai); net_fini(); return 1;
+  /* resolve host (IPv4 only): try numeric, then DNS */
+  struct sockaddr_in sa; memset(&sa, 0, sizeof(sa));
+  sa.sin_family = AF_INET;
+  sa.sin_port   = htons(port);
+
+  int ok = 0;
+  /* Try numeric dotted-quad first */
+  if(inet_pton(AF_INET, host, &sa.sin_addr) == 1){
+    ok = 1;
+  }else{
+    /* Fallback: gethostbyname() */
+    struct hostent* he = gethostbyname(host);
+    if(he && he->h_addr_list && he->h_addr_list[0]){
+      memcpy(&sa.sin_addr, he->h_addr_list[0], he->h_length);
+      ok = 1;
+    }
   }
-  freeaddrinfo(ai);
+  if(!ok){
+    fprintf(stderr, "resolve failed for host: %s\n", host);
+    CLOSESOCK(s);
+    net_fini();
+    return 1;
+  }
+
+  printf("[client] connect %s:%u ...\n", host, (unsigned)port);
+  if(connect(s, (struct sockaddr*)&sa, sizeof(sa)) < 0){
+    perror("connect");
+    CLOSESOCK(s);
+    net_fini();
+    return 1;
+  }
 
   size_t BUFSZ = (size_t)buf_kb * 1024;
   char* buf = (char*)malloc(BUFSZ);
-  if(!buf){ fprintf(stderr, "oom\n"); CLOSESOCK(s); net_fini(); return 1; }
+  if(!buf){
+    fprintf(stderr, "oom\n");
+    CLOSESOCK(s);
+    net_fini();
+    return 1;
+  }
   memset(buf, 'A', BUFSZ);
 
-  printf("[client] seconds=%d  buf=%dKB  (single TCP stream)\n", seconds, buf_kb);
+  printf("[client] seconds=%d  buf=%dKB  (single TCP stream, IPv4)\n", seconds, buf_kb);
 
   size_t total = 0, interval = 0;
   double t0 = now_secs(), last = t0;
   double tend = t0 + (double)seconds;
 
   while(1){
-    /* Time check before sending next chunk */
     double now = now_secs();
     if(now >= tend) break;
 
@@ -240,7 +311,7 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
       total += (size_t)n;
       interval += (size_t)n;
     }else if(n == 0){
-      /* Shouldn't happen on send; treat as end */
+      /* unlikely on send; treat as end */
       break;
     }else{
 #ifdef _WIN32
@@ -265,7 +336,7 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
     }
   }
 
-  /* Politely shutdown write side, then drain any server FIN */
+  /* close write side then drain FIN politely (optional) */
 #ifdef _WIN32
   shutdown(s, SD_SEND);
 #else
