@@ -49,7 +49,6 @@
 #endif
 
 #ifdef __human68k__
-#define SO_REUSEADDR (0)
 
 #undef  CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 100
@@ -119,11 +118,13 @@ static int run_server(const char* port_str){
     net_fini();
     return 1;
   }
-
+#ifdef __human68k__
+  /* skip */
+#else
   /* reuseaddr */
   int yes = 1;
   setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
-
+#endif
   /* bind to 0.0.0.0:port */
   struct sockaddr_in sa; memset(&sa, 0, sizeof(sa));
   sa.sin_family = AF_INET;
