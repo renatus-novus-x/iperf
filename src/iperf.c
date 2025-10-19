@@ -52,11 +52,24 @@
 #define CLOCK_MONOTONIC (0)
 #define SO_REUSEADDR (0)
 void clock_gettime(/*clockid_t clockid*/int clockid, struct timespec *tp){}
-const char* gai_strerror(int errcode) {
-  static char str[1024];
-  sprintf(str, "errcode=%d", errcode);
-  return str;
+
+#undef  CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC 100
+static inline uint32_t trap_ontime_cs(void){
+  uint32_t cs;
+  __asm__ volatile(
+    "moveq  #0x7F,%%d0 \n\t"  /* _ONTIME */
+    "trap   #15        \n\t"  /* IOCS    */
+    "move.l %%d0,%0    \n\t"
+    : "=d"(cs)
+    :
+    : "d0","d1","a0","cc","memory"
+  );
+  return cs;
 }
+static inline clock_t platform_clock(void){ return (clock_t)trap_ontime_cs(); }
+#else
+static inline clock_t platform_clock(void){ return (clock_t)clock(); }
 #endif
 
 /* High-resolution wall clock seconds */
@@ -68,9 +81,7 @@ static double now_secs(void){
   QueryPerformanceCounter(&t);
   return (double)t.QuadPart / (double)freq.QuadPart;
 #else
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+  return (double)platform_clock() / (double)CLOCKS_PER_SEC;
 #endif
 }
 
