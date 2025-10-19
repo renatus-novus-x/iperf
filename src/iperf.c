@@ -49,12 +49,11 @@
 #endif
 
 #ifdef __human68k__
-#define CLOCK_MONOTONIC (0)
 #define SO_REUSEADDR (0)
-void clock_gettime(/*clockid_t clockid*/int clockid, struct timespec *tp){}
 
 #undef  CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 100
+
 static inline uint32_t trap_ontime_cs(void){
   uint32_t cs;
   __asm__ volatile(
@@ -95,15 +94,6 @@ static void human_rate(double bytes_per_sec, char* out, size_t outsz){
   double mbps = (bytes_per_sec * 8.0) / 1e6;
   double mBps = bytes_per_sec / 1e6;
   snprintf(out, outsz, "%.2f Mb/s (%.2f MB/s)", mbps, mBps);
-}
-
-static int set_reuseaddr(sock_t s){
-#ifdef __human68k__
-  return 0;
-#else
-  int yes = 1;
-  return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
-#endif
 }
 
 static int run_server(const char* port_str){
