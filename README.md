@@ -8,4 +8,5 @@
    - Server: receive and discard, print per-second and total rates
    - Client: send fixed-size chunks for given seconds, print per-second and total rates
 ## Download
-- [iperf.exe](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf.exe)
+- [iperf.exe (windows)](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf.exe)
+- [iperf.x (x68000)](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf.x)
