@@ -4,7 +4,7 @@
 
 # iperf
    Minimal single-thread TCP throughput tester (client/server)
-   Cross-platform: Windows / macOS / Linux
+   Cross-platform: Windows / macOS / Linux / X68000
    - Server: receive and discard, print per-second and total rates
    - Client: send fixed-size chunks for given seconds, print per-second and total rates
 ## Download
