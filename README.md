@@ -1,4 +1,4 @@
-[“ú–{Œê](./README.ja.md)
+ï»¿[æ—¥æœ¬èªž](./README.ja.md)
 
 [![windows](https://github.com/renatus-novus-x/iperf/workflows/windows/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Awindows)
 [![macos](https://github.com/renatus-novus-x/iperf/workflows/macos/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Amacos)
