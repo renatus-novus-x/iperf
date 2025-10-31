@@ -1,6 +1,10 @@
+[“ú–{Œê](./README.ja.md)
+
 [![windows](https://github.com/renatus-novus-x/iperf/workflows/windows/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Awindows)
 [![macos](https://github.com/renatus-novus-x/iperf/workflows/macos/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Amacos)
 [![ubuntu](https://github.com/renatus-novus-x/iperf/workflows/ubuntu/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Aubuntu)
+
+<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/tether.png" title="tether" />
 
 # iperf
    Minimal single-thread TCP throughput tester (client/server)
