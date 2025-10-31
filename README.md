@@ -9,4 +9,5 @@
    - Client: send fixed-size chunks for given seconds, print per-second and total rates
 ## Download
 - [iperf.exe (windows)](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf.exe)
+- [iperf (macos)](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf)
 - [iperf.x (x68000)](https://raw.githubusercontent.com/renatus-novus-x/iperf/main/bin/iperf.x)
