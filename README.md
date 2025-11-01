@@ -4,8 +4,16 @@
 [![macos](https://github.com/renatus-novus-x/iperf/workflows/macos/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Amacos)
 [![ubuntu](https://github.com/renatus-novus-x/iperf/workflows/ubuntu/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Aubuntu)
 
-<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/server.gif" title="server" />
-<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/client.gif" title="client" />
+<table>
+  <tr>
+    <td width="50%">
+      <img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/server.gif" alt="server" title="server" width="100%">
+    </td>
+    <td width="50%">
+      <img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/client.gif" alt="client" title="client" width="100%">
+    </td>
+  </tr>
+</table>
 
 # iperf
    Minimal single-thread TCP throughput tester (client/server)
