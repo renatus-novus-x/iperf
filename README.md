@@ -6,10 +6,10 @@
 
 <table>
   <tr>
-    <td width="50%">
+    <td width="75%">
       <img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/server.gif" alt="server" title="server" width="100%">
     </td>
-    <td width="50%">
+    <td width="75%">
       <img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/client.gif" alt="client" title="client" width="100%">
     </td>
   </tr>
