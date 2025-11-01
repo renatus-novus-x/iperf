@@ -4,7 +4,8 @@
 [![macos](https://github.com/renatus-novus-x/iperf/workflows/macos/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Amacos)
 [![ubuntu](https://github.com/renatus-novus-x/iperf/workflows/ubuntu/badge.svg)](https://github.com/renatus-novus-x/iperf/actions?query=workflow%3Aubuntu)
 
-<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/tether.png" title="tether" />
+<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/server.gif" title="server" />
+<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/client.gif" title="client" />
 
 # iperf
    最小限のシングルスレッドTCPスループットテスター（クライアント/サーバー）
