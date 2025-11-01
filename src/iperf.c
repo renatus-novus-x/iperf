@@ -53,18 +53,23 @@
 #undef  CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 100
 
-static inline uint32_t trap_ontime_cs(void){
-  uint32_t cs;
-  __asm__ volatile(
-    "moveq  #0x7F,%%d0 \n\t"  /* _ONTIME */
-    "trap   #15        \n\t"  /* IOCS    */
-    "move.l %%d0,%0    \n\t"
-    : "=d"(cs)
-    :
-    : "d0","d1","a0","cc","memory"
-  );
+  static inline uint32_t trap_ontime_cs(void){
+    uint32_t cs;
+    __asm__ volatile(
+      "moveq  #0x7F,%%d0 \n\t"  /* _ONTIME */
+      "trap   #15        \n\t"  /* IOCS    */
+      "move.l %%d0,%0    \n\t"
+      : "=d"(cs)
+      :
+      : "d0","d1","a0","cc","memory"
+    );
   return cs;
-}
+  }
+  #define ZU "%lu"
+  #define SIZET(x) ((unsigned long)(x))
+#else
+  #define ZU "%zu"
+  #define SIZET(x) (x)
 #endif
 
 /* High-resolution wall clock seconds */
@@ -216,8 +221,8 @@ static int run_server(const char* port_str){
     if(now - last >= 1.0){
       double bps = (double)interval / (now - last);
       char rate[64]; human_rate(bps, rate, sizeof(rate));
-      printf("[server] %.0f-%.0fs: %zu bytes  %s\n",
-             last - t0, now - t0, interval, rate);
+      printf("[server] %.0f-%.0fs: " ZU " bytes  %s\n",
+             last - t0, now - t0, SIZET(interval), rate);
       interval = 0;
       last = now;
     }
@@ -226,7 +231,7 @@ static int run_server(const char* port_str){
   double t1 = now_secs();
   double dt = (t1 > t0) ? (t1 - t0) : 1e-6;
   char rate[64]; human_rate((double)total / dt, rate, sizeof(rate));
-  printf("[server] TOTAL: %zu bytes in %.2fs  %s\n", total, dt, rate);
+  printf("[server] TOTAL: " ZU " bytes in %.2fs  %s\n", SIZET(total), dt, rate);
 
   free(buf);
   CLOSESOCK(s);
@@ -336,8 +341,8 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
     if(now - last >= 1.0){
       double bps = (double)interval / (now - last);
       char rate[64]; human_rate(bps, rate, sizeof(rate));
-      printf("[client] %.0f-%.0fs: %zu bytes  %s\n",
-             last - t0, now - t0, interval, rate);
+      printf("[client] %.0f-%.0fs: " ZU " bytes  %s\n",
+             last - t0, now - t0, SIZET(interval), rate);
       interval = 0;
       last = now;
     }
@@ -355,7 +360,7 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
   double t1 = now_secs();
   double dt = (t1 > t0) ? (t1 - t0) : 1e-6;
   char rate[64]; human_rate((double)total / dt, rate, sizeof(rate));
-  printf("[client] TOTAL: %zu bytes in %.2fs  %s\n", total, dt, rate);
+  printf("[client] TOTAL: " ZU " bytes in %.2fs  %s\n", SIZET(total), dt, rate);
 
   free(buf);
   CLOSESOCK(s);
