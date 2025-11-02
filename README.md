@@ -83,3 +83,7 @@ Both server and client will display per-second and total throughput in:
 - **MB/s** (megabytes per second)
 
 This provides an easy **LAN speed test** between two machines using a single TCP connection.
+
+### Profile
+
+<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/profile.png" title="profile" />

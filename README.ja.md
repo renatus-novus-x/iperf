@@ -83,3 +83,7 @@
 - **MB/秒** (メガバイト/秒)
 
 これにより、単一のTCP接続を使用して2台のマシン間で簡単な**LAN速度テスト**を行うことができます。
+
+### Profile
+
+<img src="https://raw.githubusercontent.com/renatus-novus-x/iperf/main/images/profile.png" title="profile" />
