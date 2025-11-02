@@ -63,8 +63,9 @@
       :
       : "d0","d1","a0","cc","memory"
     );
-  return cs;
+    return cs;
   }
+  /* Human68k: printf in C89 does not support %zu. Use %lu with explicit cast. */
   #define ZU "%lu"
   #define SIZET(x) ((unsigned long)(x))
 #else
@@ -310,6 +311,13 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
 
   printf("[client] seconds=%d  buf=%dKB  (single TCP stream, IPv4)\n", seconds, buf_kb);
 
+  /* On Human68k, cap per-send size roughly to MSS (~1460B) to avoid oversized writes. */
+#ifdef __human68k__
+  size_t SENDSZ = BUFSZ > 1460 ? 1460 : BUFSZ;
+#else
+  size_t SENDSZ = BUFSZ;
+#endif
+
   size_t total = 0, interval = 0;
   double t0 = now_secs(), last = t0;
   double tend = t0 + (double)seconds;
@@ -318,7 +326,7 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
     double now = now_secs();
     if(now >= tend) break;
 
-    int n = (int)send(s, buf, (int)BUFSZ, 0);
+    int n = (int)send(s, buf, (int)SENDSZ, 0);
     if(n > 0){
       total += (size_t)n;
       interval += (size_t)n;
