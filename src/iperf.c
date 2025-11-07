@@ -1,6 +1,6 @@
 /* iperf.c
    Minimal single-thread TCP throughput tester (client/server)
-   Cross-platform: Windows / macOS / Linux
+   Cross-platform: Windows / macOS / Ubuntu / Human68K
    - Server: receive and discard, print per-second and total rates
    - Client: send fixed-size chunks for given seconds, print per-second and total rates
 
@@ -65,12 +65,6 @@
     );
     return cs;
   }
-  /* Human68k: printf in C89 does not support %zu. Use %lu with explicit cast. */
-  #define ZU "%lu"
-  #define SIZET(x) ((unsigned long)(x))
-#else
-  #define ZU "%zu"
-  #define SIZET(x) (x)
 #endif
 
 /* High-resolution wall clock seconds */
@@ -222,8 +216,8 @@ static int run_server(const char* port_str){
     if(now - last >= 1.0){
       double bps = (double)interval / (now - last);
       char rate[64]; human_rate(bps, rate, sizeof(rate));
-      printf("[server] %.0f-%.0fs: " ZU " bytes  %s\n",
-             last - t0, now - t0, SIZET(interval), rate);
+      printf("[server] %.0f-%.0fs: %zu bytes  %s\n",
+             last - t0, now - t0, interval, rate);
       interval = 0;
       last = now;
     }
@@ -232,7 +226,7 @@ static int run_server(const char* port_str){
   double t1 = now_secs();
   double dt = (t1 > t0) ? (t1 - t0) : 1e-6;
   char rate[64]; human_rate((double)total / dt, rate, sizeof(rate));
-  printf("[server] TOTAL: " ZU " bytes in %.2fs  %s\n", SIZET(total), dt, rate);
+  printf("[server] TOTAL: %zu bytes in %.2fs  %s\n", total, dt, rate);
 
   free(buf);
   CLOSESOCK(s);
@@ -349,8 +343,8 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
     if(now - last >= 1.0){
       double bps = (double)interval / (now - last);
       char rate[64]; human_rate(bps, rate, sizeof(rate));
-      printf("[client] %.0f-%.0fs: " ZU " bytes  %s\n",
-             last - t0, now - t0, SIZET(interval), rate);
+      printf("[client] %.0f-%.0fs: %zu bytes  %s\n",
+             last - t0, now - t0, interval, rate);
       interval = 0;
       last = now;
     }
@@ -368,7 +362,7 @@ static int run_client(const char* host, const char* port_str, int seconds, int b
   double t1 = now_secs();
   double dt = (t1 > t0) ? (t1 - t0) : 1e-6;
   char rate[64]; human_rate((double)total / dt, rate, sizeof(rate));
-  printf("[client] TOTAL: " ZU " bytes in %.2fs  %s\n", SIZET(total), dt, rate);
+  printf("[client] TOTAL: %zu bytes in %.2fs  %s\n", total, dt, rate);
 
   free(buf);
   CLOSESOCK(s);
