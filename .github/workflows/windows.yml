@@ -9,7 +9,10 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+# Pinned to the windows-2022 image: windows-latest now ships Visual
+# Studio 2026 only, so the "Visual Studio 17" generator is not
+# found there.
+runs-on: windows-2022
 
     steps:
     - uses: actions/checkout@v3
